@@ -1,10 +1,10 @@
 // --- Canvas Setup ---
-const canvas = document.getElementById("gameCanvas");
+const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 // --- Load Images ---
 const playerImg = new Image();
-playerImg.src = "./assets/logo.svg"; // Main character
+playerImg.src = "./logo.svg"; // Main character
 
 const ewObstacleImg = new Image();
 ewObstacleImg.src = "./assets/ew-device.png"; // ✅ Your new ground obstacle
