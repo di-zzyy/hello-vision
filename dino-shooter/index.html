@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Logo Runner & Shooter</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <canvas id="game" width="800" height="300"></canvas>
+  <div id="ui">
+    <div class="left">
+      <button id="startBtn">Start</button>
+      <label class="file">Upload Logo
+        <input id="logoInput" type="file" accept="image/*" />
+      </label>
+    </div>
+    <div class="right">
+      <span id="score">Score: 0</span>
+      <span id="hiScore">Best: 0</span>
+    </div>
+  </div>
+  <div id="help">
+    Space: Jump • Click: Shoot • R: Restart
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>
