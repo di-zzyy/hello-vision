@@ -21,7 +21,7 @@ let gameOver = false;
 let animationId = null;
 let frame = 0;
 let score = 0;
-let hiScore = 0;
+let hiScore = Number(localStorage.getItem("hiScore") || "0");
 let spawnCountdown = 0;
 
 // Entities
@@ -74,6 +74,20 @@ canvas.addEventListener("click", () => {
   if (isRunning) shoot();
 });
 
+// Touch: tap to start/jump (mobile-friendly)
+canvas.addEventListener(
+  "touchstart",
+  (e) => {
+    e.preventDefault();
+    if (!isRunning) {
+      startGame();
+    } else if (player.grounded) {
+      jump();
+    }
+  },
+  { passive: false }
+);
+
 // Actions
 function startGame() {
   if (isRunning) return;
@@ -99,7 +113,7 @@ function resetGameState() {
   obstacles = [];
   frame = 0;
   score = 0;
-  spawnCountdown = randInt(60, 110);
+  spawnCountdown = nextSpawnCountdown();
   updateScoreUI();
 }
 
@@ -122,7 +136,7 @@ function createObstacle() {
   const isAir = Math.random() < 0.5;
   const width = randInt(35, 60);
   const height = randInt(30, 60);
-  const speed = 5 + Math.min(4, Math.floor(frame / 1200)); // slowly increases over time
+  const speed = 5 + Math.floor(getDifficulty() * 4); // slowly increases over time
   const y = isAir ? randInt(120, 180) : FLOOR_Y - height;
 
   obstacles.push({
@@ -131,7 +145,7 @@ function createObstacle() {
     width,
     height,
     speed,
-    color: isAir ? "#5a8dee" : "#cc5544",
+    color: "#535353",
     type: isAir ? "air" : "ground",
   });
 }
@@ -146,7 +160,7 @@ function isColliding(a, b) {
 }
 
 function drawGround() {
-  ctx.strokeStyle = "#2b4b6f";
+  ctx.strokeStyle = "#535353";
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(0, FLOOR_Y + 2);
@@ -158,7 +172,7 @@ function drawStartPrompt() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawGround();
   ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
-  ctx.fillStyle = "#222";
+  ctx.fillStyle = "#535353";
   ctx.font = "20px Arial";
   ctx.fillText("Press Space or click Start", canvas.width / 2 - 150, 60);
 }
@@ -169,6 +183,11 @@ function update() {
   if (gameOver) {
     isRunning = false;
     hiScore = Math.max(hiScore, score);
+    try {
+      localStorage.setItem("hiScore", String(hiScore));
+    } catch (_) {
+      // ignore storage errors
+    }
     updateScoreUI();
     drawGameOver();
     return;
@@ -211,7 +230,7 @@ function update() {
   spawnCountdown--;
   if (spawnCountdown <= 0) {
     createObstacle();
-    spawnCountdown = randInt(60, 110);
+    spawnCountdown = nextSpawnCountdown();
   }
 
   // Obstacles move and collide
@@ -258,6 +277,21 @@ function drawGameOver() {
   ctx.fillText("Game Over!", canvas.width / 2 - 100, canvas.height / 2 - 10);
   ctx.font = "20px Arial";
   ctx.fillText(`Final Score: ${score}`, canvas.width / 2 - 70, canvas.height / 2 + 20);
+}
+
+// Difficulty helpers: ramp up spawn rate and speed over time
+function getDifficulty() {
+  // 0 at start, 1 at ~100 seconds at 60fps
+  return Math.min(1, frame / 6000);
+}
+
+function nextSpawnCountdown() {
+  const baseMin = 60;
+  const baseMax = 110;
+  const reduction = Math.floor(getDifficulty() * 40); // up to ~40 frames reduction
+  const min = Math.max(30, baseMin - reduction);
+  const max = Math.max(min + 5, baseMax - reduction);
+  return randInt(min, max);
 }
 
 // Initial idle draw
