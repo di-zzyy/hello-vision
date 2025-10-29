@@ -76,14 +76,19 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-// Allow shooting by clicking anywhere in the document (not just the canvas)
-document.addEventListener("click", (e) => {
+// Allow shooting by clicking anywhere in the browser window (not just the canvas)
+function handleGlobalPointerDown(e) {
   if (!isRunning) return;
   const target = e.target;
   // Ignore clicks on Start/Restart button to avoid unintended immediate shots
   if (startBtn && (target === startBtn || startBtn.contains(target))) return;
   shoot();
-});
+}
+if ("onpointerdown" in window) {
+  window.addEventListener("pointerdown", handleGlobalPointerDown);
+} else {
+  window.addEventListener("mousedown", handleGlobalPointerDown);
+}
 
 // Touch: tap to start/jump (mobile-friendly)
 canvas.addEventListener(
