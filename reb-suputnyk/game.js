@@ -60,7 +60,9 @@ startBtn?.addEventListener("click", () => startGame());
 document.addEventListener("keydown", (e) => {
   if (e.code === "Space") {
     e.preventDefault();
-    if (!isRunning) {
+    if (gameOver) {
+      restartGame();
+    } else if (!isRunning) {
       startGame();
     } else if (player.grounded) {
       jump();
@@ -97,6 +99,8 @@ function startGame() {
   if (isRunning) return;
   resetGameState();
   isRunning = true;
+  // Hide Start/Restart button during gameplay
+  startBtn?.classList.add("hidden");
   animationId = requestAnimationFrame(update);
 }
 
@@ -197,6 +201,11 @@ function update() {
       // ignore storage errors
     }
     updateScoreUI();
+    // Show Restart button on game over
+    if (startBtn) {
+      startBtn.textContent = "Restart";
+      startBtn.classList.remove("hidden");
+    }
     drawGameOver();
     return;
   }
