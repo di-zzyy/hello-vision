@@ -8,6 +8,8 @@ const hiScoreEl = document.getElementById("hiScore");
 // Assets
 const playerImg = new Image();
 playerImg.src = "./logo.svg";
+const groundObstacleImg = new Image();
+groundObstacleImg.src = "./reb.png";
 
 // Game constants
 const PLAYER_WIDTH = 60;
@@ -346,8 +348,16 @@ function update() {
       if (o.y < minY) o.y = minY;
       if (o.y > maxY) o.y = maxY;
     }
-    ctx.fillStyle = o.color;
-    ctx.fillRect(o.x, o.y, o.width, o.height);
+    if (
+      o.type === "ground" &&
+      groundObstacleImg.complete &&
+      groundObstacleImg.naturalWidth > 0
+    ) {
+      ctx.drawImage(groundObstacleImg, o.x, o.y, o.width, o.height);
+    } else {
+      ctx.fillStyle = o.color;
+      ctx.fillRect(o.x, o.y, o.width, o.height);
+    }
 
     // Player collision with forgiving hitbox and top-overlap grace
     const ph = getPlayerHitbox();
