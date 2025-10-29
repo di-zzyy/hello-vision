@@ -88,6 +88,7 @@ if ("onpointerdown" in window) {
   window.addEventListener("pointerdown", handleGlobalPointerDown);
 } else {
   window.addEventListener("mousedown", handleGlobalPointerDown);
+  window.addEventListener("touchstart", handleGlobalPointerDown, { passive: true });
 }
 
 // Touch: tap to start/jump (mobile-friendly)
