@@ -18,6 +18,13 @@ const FLOOR_Y = PLAYER_GROUND_Y + PLAYER_HEIGHT; // absolute ground line in canv
 const MAX_SHOTS_PER_SECOND = 4;
 const MIN_SHOT_INTERVAL_MS = Math.floor(1000 / MAX_SHOTS_PER_SECOND);
 
+// Jump forgiveness and hitbox tuning
+const JUMP_BUFFER_FRAMES = 10; // allow jump input buffered for ~160ms
+const COYOTE_FRAMES = 9; // allow jump shortly after leaving ground (~150ms)
+const HITBOX_INSET_X = 6; // shrink player hitbox horizontally to reduce grazes
+const HITBOX_INSET_Y = 4; // shrink player hitbox vertically to reduce grazes
+const VERTICAL_GRACE_PX = 6; // ignore tiny vertical overlaps with obstacle tops
+
 // Game state
 let isRunning = false;
 let gameOver = false;
@@ -35,14 +42,18 @@ let player = {
   width: PLAYER_WIDTH,
   height: PLAYER_HEIGHT,
   dy: 0,
-  gravity: 0.8,
-  jumpPower: -13,
+  gravity: 0.72, // slightly lower gravity: longer airtime
+  jumpPower: -14.5, // stronger jump: higher peak
   grounded: true,
   forwardSpeed: 2.0,
 };
 
 let bullets = [];
 let obstacles = [];
+
+// Input forgiveness state
+let jumpBufferFrames = 0; // counts down when jump was requested recently
+let coyoteFrames = 0; // counts down after leaving ground
 
 // Helpers
 function randInt(min, max) {
@@ -64,8 +75,9 @@ document.addEventListener("keydown", (e) => {
       restartGame();
     } else if (!isRunning) {
       startGame();
-    } else if (player.grounded) {
-      jump();
+    } else {
+      // buffer the jump input; will be consumed in the update loop
+      jumpBufferFrames = JUMP_BUFFER_FRAMES;
     }
   }
   if (e.code === "Enter") {
@@ -98,8 +110,9 @@ canvas.addEventListener(
     e.preventDefault();
     if (!isRunning) {
       startGame();
-    } else if (player.grounded) {
-      jump();
+    } else {
+      // buffer jump on touch for mobile
+      jumpBufferFrames = JUMP_BUFFER_FRAMES;
     }
   },
   { passive: false }
@@ -201,6 +214,16 @@ function isColliding(a, b) {
   );
 }
 
+function getPlayerHitbox() {
+  // Shrink the collision box to be more forgiving
+  return {
+    x: player.x + HITBOX_INSET_X,
+    y: player.y + HITBOX_INSET_Y,
+    width: player.width - 2 * HITBOX_INSET_X,
+    height: player.height - 2 * HITBOX_INSET_Y,
+  };
+}
+
 function drawGround() {
   ctx.strokeStyle = "#535353";
   ctx.lineWidth = 2;
@@ -243,6 +266,21 @@ function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   frame++;
 
+  // Maintain coyote timer and decrease jump buffer each frame
+  if (player.grounded) {
+    coyoteFrames = COYOTE_FRAMES;
+  } else if (coyoteFrames > 0) {
+    coyoteFrames--;
+  }
+  if (jumpBufferFrames > 0) jumpBufferFrames--;
+
+  // Consume buffered jump using coyote time (before physics step)
+  if (jumpBufferFrames > 0 && (player.grounded || coyoteFrames > 0)) {
+    jump();
+    jumpBufferFrames = 0;
+    coyoteFrames = 0;
+  }
+
   // Gravity
   player.dy += player.gravity;
   player.y += player.dy;
@@ -252,6 +290,13 @@ function update() {
     player.y = PLAYER_GROUND_Y;
     player.dy = 0;
     player.grounded = true;
+  }
+
+  // If we buffered a jump right before landing, trigger it now
+  if (player.grounded && jumpBufferFrames > 0) {
+    jump();
+    jumpBufferFrames = 0;
+    coyoteFrames = 0;
   }
 
   // Forward movement: ease to target X
@@ -304,9 +349,15 @@ function update() {
     ctx.fillStyle = o.color;
     ctx.fillRect(o.x, o.y, o.width, o.height);
 
-    // Player collision
-    if (isColliding(player, o)) {
-      gameOver = true;
+    // Player collision with forgiving hitbox and top-overlap grace
+    const ph = getPlayerHitbox();
+    if (isColliding(ph, o)) {
+      const playerBottom = ph.y + ph.height;
+      const obstacleTop = o.y;
+      const verticalOverlap = playerBottom - obstacleTop; // > 0 means overlapping from top
+      if (!(verticalOverlap > 0 && verticalOverlap <= VERTICAL_GRACE_PX)) {
+        gameOver = true;
+      }
     }
 
     // Bullet collision
