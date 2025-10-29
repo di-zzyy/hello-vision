@@ -76,8 +76,13 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-canvas.addEventListener("click", () => {
-  if (isRunning) shoot();
+// Allow shooting by clicking anywhere in the document (not just the canvas)
+document.addEventListener("click", (e) => {
+  if (!isRunning) return;
+  const target = e.target;
+  // Ignore clicks on Start/Restart button to avoid unintended immediate shots
+  if (startBtn && (target === startBtn || startBtn.contains(target))) return;
+  shoot();
 });
 
 // Touch: tap to start/jump (mobile-friendly)
