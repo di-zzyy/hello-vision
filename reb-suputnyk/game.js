@@ -10,9 +10,6 @@ const playerImg = new Image();
 playerImg.src = "./logo.svg";
 const groundObstacleImg = new Image();
 groundObstacleImg.src = "./reb.png";
-// Air obstacle sprite: drone (used as one of two air types)
-const droneImg = new Image();
-droneImg.src = "./drone.gif";
 
 // Game constants
 const PLAYER_WIDTH = 60;
@@ -203,8 +200,6 @@ function createObstacle() {
     const isFlying = Math.random() < 0.5; // 50% of air obstacles fly toward player
     const height = baseHeight;
     const y = randInt(120, 180);
-    // Choose appearance: 50% chance to be a drone sprite, otherwise block
-    const appearance = Math.random() < 0.5 ? "drone" : "block";
     obstacles.push({
       x: canvas.width + randInt(0, 80),
       y,
@@ -213,7 +208,6 @@ function createObstacle() {
       speed,
       color: "#535353",
       type: isFlying ? "air_flying" : "air_static",
-      appearance,
     });
   }
 }
@@ -359,15 +353,11 @@ function update() {
       if (o.y < minY) o.y = minY;
       if (o.y > maxY) o.y = maxY;
     }
-    // Draw obstacle with sprite if available, else fallback to rectangle
-    const canDrawGroundSprite =
-      o.type === "ground" && groundObstacleImg.complete && groundObstacleImg.naturalWidth > 0;
-    const canDrawDroneSprite =
-      o.appearance === "drone" && droneImg.complete && droneImg.naturalWidth > 0;
-
-    if (canDrawDroneSprite) {
-      ctx.drawImage(droneImg, o.x, o.y, o.width, o.height);
-    } else if (canDrawGroundSprite) {
+    if (
+      o.type === "ground" &&
+      groundObstacleImg.complete &&
+      groundObstacleImg.naturalWidth > 0
+    ) {
       ctx.drawImage(groundObstacleImg, o.x, o.y, o.width, o.height);
     } else {
       ctx.fillStyle = o.color;
