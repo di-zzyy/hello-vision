@@ -10,6 +10,8 @@ const playerImg = new Image();
 playerImg.src = "./logo.svg";
 const groundObstacleImg = new Image();
 groundObstacleImg.src = "./reb.png";
+const airObstacleImg = new Image();
+airObstacleImg.src = "./air-1.png";
 
 // Game constants
 const PLAYER_WIDTH = 60;
@@ -196,18 +198,26 @@ function createObstacle() {
       type: "ground",
     });
   } else {
-    // Air obstacle: split into static and flying variants
-    const isFlying = Math.random() < 0.5; // 50% of air obstacles fly toward player
+    // Air obstacle: oscillates up and down while moving horizontally
     const height = baseHeight;
-    const y = randInt(120, 180);
+    const airLaneMinY = 90;
+    const airLaneMaxY = FLOOR_Y - height - 10;
+    const baseY = randInt(120, Math.max(120, airLaneMaxY - 20));
+    const amplitude = randInt(12, 24);
+    const phase = Math.random() * Math.PI * 2;
+    const phaseSpeed = 0.05 + Math.random() * 0.06; // radians per frame
     obstacles.push({
       x: canvas.width + randInt(0, 80),
-      y,
+      y: baseY,
+      baseY,
       width,
       height,
       speed,
+      amplitude,
+      phase,
+      phaseSpeed,
       color: "#535353",
-      type: isFlying ? "air_flying" : "air_static",
+      type: "air_oscillating",
     });
   }
 }
@@ -353,12 +363,26 @@ function update() {
       if (o.y < minY) o.y = minY;
       if (o.y > maxY) o.y = maxY;
     }
+    // Air-oscillating obstacles bob up and down sinusoidally
+    if (o.type === "air_oscillating") {
+      o.phase += o.phaseSpeed;
+      const minY = 90;
+      const maxY = FLOOR_Y - o.height - 10;
+      const targetY = o.baseY + Math.sin(o.phase) * o.amplitude;
+      o.y = Math.max(minY, Math.min(maxY, targetY));
+    }
     if (
       o.type === "ground" &&
       groundObstacleImg.complete &&
       groundObstacleImg.naturalWidth > 0
     ) {
       ctx.drawImage(groundObstacleImg, o.x, o.y, o.width, o.height);
+    } else if (
+      o.type.startsWith("air") &&
+      airObstacleImg.complete &&
+      airObstacleImg.naturalWidth > 0
+    ) {
+      ctx.drawImage(airObstacleImg, o.x, o.y, o.width, o.height);
     } else {
       ctx.fillStyle = o.color;
       ctx.fillRect(o.x, o.y, o.width, o.height);
