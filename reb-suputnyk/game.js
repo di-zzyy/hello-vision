@@ -35,8 +35,8 @@ let player = {
   width: PLAYER_WIDTH,
   height: PLAYER_HEIGHT,
   dy: 0,
-  gravity: 0.8,
-  jumpPower: -13,
+  gravity: 0.76,
+  jumpPower: -14,
   grounded: true,
   forwardSpeed: 2.0,
 };
