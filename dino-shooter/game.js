@@ -14,6 +14,9 @@ const PLAYER_WIDTH = 60;
 const PLAYER_HEIGHT = 60;
 const PLAYER_GROUND_Y = 220; // player's top-left Y when standing on ground
 const FLOOR_Y = PLAYER_GROUND_Y + PLAYER_HEIGHT; // absolute ground line in canvas coords
+// Shooting rate limit
+const MAX_SHOTS_PER_SECOND = 4;
+const MIN_SHOT_INTERVAL_MS = Math.floor(1000 / MAX_SHOTS_PER_SECOND);
 
 // Game state
 let isRunning = false;
@@ -23,6 +26,7 @@ let frame = 0;
 let score = 0;
 let hiScore = Number(localStorage.getItem("hiScore") || "0");
 let spawnCountdown = 0;
+let lastShotTimeMs = 0;
 
 // Entities
 let player = {
@@ -123,6 +127,10 @@ function jump() {
 }
 
 function shoot() {
+  const now = performance.now();
+  if (now - lastShotTimeMs < MIN_SHOT_INTERVAL_MS) return; // rate limited
+  lastShotTimeMs = now;
+
   bullets.push({
     x: player.x + player.width,
     y: player.y + player.height / 2 - 3,
