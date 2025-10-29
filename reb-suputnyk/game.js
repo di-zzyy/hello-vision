@@ -14,9 +14,10 @@ groundObstacleImg.src = "./reb.png";
 // Game constants
 const PLAYER_WIDTH = 60;
 const PLAYER_HEIGHT = 60;
-// Ground obstacle dimensions (uniform size), keeping a 5:3 height:width ratio
-const GROUND_OBSTACLE_HEIGHT = 60; // 60px tall
-const GROUND_OBSTACLE_WIDTH = 36; // 36px wide (5:3 ratio with height)
+// Ground obstacle dimensions (uniform size), keeping a 5:4 height:width ratio
+// 10% larger than previous size: height 66px, width ~52.8px
+const GROUND_OBSTACLE_HEIGHT = 66; // 66px tall (10% bigger)
+const GROUND_OBSTACLE_WIDTH = 53; // ≈52.8px wide (5:4 ratio with height)
 const PLAYER_GROUND_Y = 220; // player's top-left Y when standing on ground
 const FLOOR_Y = PLAYER_GROUND_Y + PLAYER_HEIGHT; // absolute ground line in canvas coords
 // Shooting rate limit
@@ -181,7 +182,7 @@ function createObstacle() {
   const speed = 5 + Math.floor(getDifficulty() * 4); // slowly increases over time
 
   if (!isAir) {
-    // Ground obstacle: use uniform dimensions with 5:3 height:width ratio
+    // Ground obstacle: use uniform dimensions with 5:4 height:width ratio
     const width = GROUND_OBSTACLE_WIDTH;
     const height = GROUND_OBSTACLE_HEIGHT;
     const y = FLOOR_Y - height;
