@@ -156,21 +156,40 @@ function shoot() {
 }
 
 function createObstacle() {
+  // Decide category: ground vs air
   const isAir = Math.random() < 0.5;
   const width = randInt(35, 60);
-  const height = randInt(30, 60);
+  const baseHeight = randInt(30, 60);
   const speed = 5 + Math.floor(getDifficulty() * 4); // slowly increases over time
-  const y = isAir ? randInt(120, 180) : FLOOR_Y - height;
 
-  obstacles.push({
-    x: canvas.width + randInt(0, 80),
-    y,
-    width,
-    height,
-    speed,
-    color: "#535353",
-    type: isAir ? "air" : "ground",
-  });
+  if (!isAir) {
+    // Ground obstacle: reduce height by ~20% to make jumps easier
+    const height = Math.max(12, Math.round(baseHeight * 0.8));
+    const y = FLOOR_Y - height;
+    obstacles.push({
+      x: canvas.width + randInt(0, 80),
+      y,
+      width,
+      height,
+      speed,
+      color: "#535353",
+      type: "ground",
+    });
+  } else {
+    // Air obstacle: split into static and flying variants
+    const isFlying = Math.random() < 0.5; // 50% of air obstacles fly toward player
+    const height = baseHeight;
+    const y = randInt(120, 180);
+    obstacles.push({
+      x: canvas.width + randInt(0, 80),
+      y,
+      width,
+      height,
+      speed,
+      color: "#535353",
+      type: isFlying ? "air_flying" : "air_static",
+    });
+  }
 }
 
 function isColliding(a, b) {
@@ -265,6 +284,23 @@ function update() {
   for (let i = obstacles.length - 1; i >= 0; i--) {
     const o = obstacles[i];
     o.x -= o.speed;
+
+    // Air-flying obstacles track the player's vertical position
+    if (o.type === "air_flying") {
+      const playerCenterY = player.y + player.height / 2;
+      const obstacleCenterY = o.y + o.height / 2;
+      const maxVerticalSpeed = 1.5 + getDifficulty() * 2.0; // ramps with difficulty
+      const deltaY = playerCenterY - obstacleCenterY;
+      if (Math.abs(deltaY) > 0.5) {
+        const step = Math.sign(deltaY) * Math.min(Math.abs(deltaY), maxVerticalSpeed);
+        o.y += step;
+      }
+      // keep within air lane bounds
+      const minY = 90;
+      const maxY = FLOOR_Y - o.height - 10;
+      if (o.y < minY) o.y = minY;
+      if (o.y > maxY) o.y = maxY;
+    }
     ctx.fillStyle = o.color;
     ctx.fillRect(o.x, o.y, o.width, o.height);
 
