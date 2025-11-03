@@ -22,7 +22,7 @@ backgroundMusic.preload = "auto";
 
 const SHOOT_SOUND_PATH = "./whoosh-gaming-blaster.mp3";
 const SHOOT_SOUND_POOL_SIZE = 5;
-const SHOOT_SOUND_VOLUME = 0.65;
+const SHOOT_SOUND_VOLUME = 0.35;
 const shootSoundPool = Array.from({ length: SHOOT_SOUND_POOL_SIZE }, () => {
   const audio = new Audio(SHOOT_SOUND_PATH);
   audio.volume = SHOOT_SOUND_VOLUME;
