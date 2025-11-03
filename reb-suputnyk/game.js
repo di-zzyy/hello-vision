@@ -48,13 +48,18 @@ const MIN_SHOT_INTERVAL_MS = Math.floor(1000 / MAX_SHOTS_PER_SECOND);
 const AIR_OBSTACLE_SIZE = { width: 60, height: 54 };
 const LARGE_AIR_OBSTACLE_SIZE = { width: 92, height: 92 };
 
-const BASE_OBSTACLE_SPEED = 5;
-const SPEED_INCREASE_PER_LEVEL = 0.8;
-const SCORE_PER_SPEED_LEVEL = 40;
+const BASE_OBSTACLE_SPEED = 4.25; // ~15% slower for easier baseline
+const SPEED_INCREASE_PER_LEVEL = 0.68; // ~15% gentler acceleration curve
+const SCORE_PER_SPEED_LEVEL = 46; // require more progress before speed increases
 const MAX_SPEED_LEVEL = 10;
 const SCORE_FOR_MAX_DIFFICULTY = SCORE_PER_SPEED_LEVEL * MAX_SPEED_LEVEL;
 const MAX_SAME_OBSTACLE_FAMILY_STREAK = 2;
 const OBSTACLE_BALANCE_WINDOW = 6;
+const BASE_SPAWN_MIN_FRAMES = 55; // ~15% longer gap baseline between spawns
+const BASE_SPAWN_MAX_FRAMES = 106;
+const MAX_SPAWN_REDUCTION_FRAMES = 44;
+const BASE_DISTANCE_PER_POINT = 520;
+const DISTANCE_PER_POINT = Math.floor(BASE_DISTANCE_PER_POINT / 2); // half the previous distance per request
 
 // Jump forgiveness and hitbox tuning
 const JUMP_BUFFER_FRAMES = 10; // allow jump input buffered for ~160ms
@@ -77,6 +82,7 @@ let score = 0;
 let hiScore = Number(localStorage.getItem("hiScore") || "0");
 let spawnCountdown = 0;
 let lastShotTimeMs = 0;
+let distanceAccumulator = 0;
 
 // Entities
 let player = {
@@ -174,6 +180,14 @@ function getBalancedAirChance() {
 function updateScoreUI() {
   if (scoreEl) scoreEl.textContent = `Score: ${score}`;
   if (hiScoreEl) hiScoreEl.textContent = `Best: ${hiScore}`;
+}
+
+function accrueDistance(distanceUnits) {
+  distanceAccumulator += distanceUnits;
+  while (distanceAccumulator >= DISTANCE_PER_POINT) {
+    distanceAccumulator -= DISTANCE_PER_POINT;
+    score += 1;
+  }
 }
 
 function updateStartButtonVisibility() {
@@ -312,6 +326,7 @@ function resetGameState() {
   obstacles = [];
   frame = 0;
   score = 0;
+  distanceAccumulator = 0;
   resetAirObstacleCycle();
   spawnCountdown = nextSpawnCountdown();
   updateScoreUI();
@@ -674,7 +689,6 @@ function update() {
       if (o.type.startsWith("air")) {
         obstacles.splice(i, 1);
         bullets.splice(j, 1);
-        score += o.type === "air_static_large" ? 8 : 5;
         break;
       }
 
@@ -685,14 +699,18 @@ function update() {
     // Off-screen
     if (o.x + o.width < 0) {
       obstacles.splice(i, 1);
-      score += 2;
     }
-  }
+    }
 
-  // Score (DOM)
-  updateScoreUI();
+    if (!gameOver) {
+      const frameTravel = getObstacleSpeed();
+      accrueDistance(frameTravel);
+    }
 
-  animationId = requestAnimationFrame(update);
+    // Score (DOM)
+    updateScoreUI();
+
+    animationId = requestAnimationFrame(update);
 }
 
 function drawGameOver() {
@@ -715,11 +733,9 @@ function getDifficulty() {
 }
 
 function nextSpawnCountdown() {
-  const baseMin = 48;
-  const baseMax = 92;
-  const reduction = Math.floor(getDifficulty() * 52); // up to ~52 frames reduction
-  const min = Math.max(24, baseMin - reduction);
-  const max = Math.max(min + 5, baseMax - reduction);
+  const reduction = Math.floor(getDifficulty() * MAX_SPAWN_REDUCTION_FRAMES);
+  const min = Math.max(24, BASE_SPAWN_MIN_FRAMES - reduction);
+  const max = Math.max(min + 5, BASE_SPAWN_MAX_FRAMES - reduction);
   return randInt(min, max);
 }
 
