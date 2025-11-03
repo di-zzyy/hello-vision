@@ -132,7 +132,8 @@ function getObstacleSpeed() {
 
 function resetAirObstacleCycle() {
   airObstaclesSinceLarge = 0;
-  airObstaclesUntilLarge = randInt(8, 10);
+  const baseInterval = randInt(8, 10);
+  airObstaclesUntilLarge = Math.max(5, Math.round(baseInterval * 0.8));
   forceLargeAirSpawn = false;
 }
 
