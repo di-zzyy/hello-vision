@@ -76,6 +76,15 @@ function updateScoreUI() {
   if (hiScoreEl) hiScoreEl.textContent = `Best: ${hiScore}`;
 }
 
+function updateStartButtonVisibility() {
+  if (!startBtn) return;
+  if (isRunning || gameOver) {
+    startBtn.classList.add("hidden");
+  } else {
+    startBtn.classList.remove("hidden");
+  }
+}
+
 // Input
 startBtn?.addEventListener("click", () => startGame());
 
@@ -135,7 +144,7 @@ function startGame() {
   resetGameState();
   isRunning = true;
   // Hide Start/Restart button during gameplay
-  startBtn?.classList.add("hidden");
+  updateStartButtonVisibility();
   animationId = requestAnimationFrame(update);
 }
 
@@ -260,6 +269,7 @@ function drawStartPrompt() {
   ctx.fillStyle = "#535353";
   ctx.font = "20px Arial";
   ctx.fillText("Press Space or click Start", canvas.width / 2 - 150, 60);
+  updateStartButtonVisibility();
 }
 
 // Game loop
@@ -435,6 +445,7 @@ function drawGameOver() {
   ctx.font = "20px Arial";
   ctx.fillText(`Final Score: ${score}`, canvas.width / 2 - 70, canvas.height / 2 + 20);
   ctx.fillText("Press Space or R to try again", canvas.width / 2 - 120, canvas.height / 2 + 50);
+  updateStartButtonVisibility();
 }
 
 // Difficulty helpers: ramp up spawn rate and speed over time
