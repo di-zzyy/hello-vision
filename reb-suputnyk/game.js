@@ -88,6 +88,8 @@ let player = {
 
 let bullets = [];
 let obstacles = [];
+let airObstaclesSinceLastPuylo = 0;
+let airObstaclesBeforeNextPuylo = randInt(3, 5);
 
 // Input forgiveness state
 let jumpBufferFrames = 0; // counts down when jump was requested recently
@@ -237,6 +239,8 @@ function resetGameState() {
 
   bullets = [];
   obstacles = [];
+  airObstaclesSinceLastPuylo = 0;
+  airObstaclesBeforeNextPuylo = randInt(3, 5);
   frame = 0;
   score = 0;
   spawnCountdown = nextSpawnCountdown();
@@ -287,8 +291,13 @@ function shoot() {
 
 function createObstacle() {
   // Decide category: ground vs air
-  const isAir = Math.random() < 0.5;
+  let isAir = Math.random() < 0.5;
   const speed = 5 + Math.floor(getDifficulty() * 4); // slowly increases over time
+  const shouldSpawnPuylo = airObstaclesSinceLastPuylo >= airObstaclesBeforeNextPuylo;
+
+  if (shouldSpawnPuylo) {
+    isAir = true; // ensure we maintain the required puylo frequency
+  }
 
   if (!isAir) {
     // Ground obstacle: use uniform dimensions with 5:4 height:width ratio
@@ -304,53 +313,58 @@ function createObstacle() {
       color: "#535353",
       type: "ground",
     });
-  } else {
-    const airVariantRoll = Math.random();
-    if (airVariantRoll < 0.65) {
-      // Air obstacle: oscillates up and down while moving horizontally
-      const width = AIR_OBSTACLE_SIZE.width;
-      const height = AIR_OBSTACLE_SIZE.height;
-      const airLaneMinY = 90;
-      const airLaneMaxY = FLOOR_Y - height - 10;
-      const baseY = randInt(120, Math.max(120, airLaneMaxY - 20));
-      const amplitude = randInt(12, 24);
-      const phase = Math.random() * Math.PI * 2;
-      const phaseSpeed = 0.05 + Math.random() * 0.06; // radians per frame
-      obstacles.push({
-        x: canvas.width + randInt(0, 80),
-        y: baseY,
-        baseY,
-        width,
-        height,
-        speed,
-        amplitude,
-        phase,
-        phaseSpeed,
-        color: "#535353",
-        type: "air_oscillating",
-      });
-    } else {
-      // Large static air obstacle using puylo sprite
-      const width = LARGE_AIR_OBSTACLE_SIZE.width;
-      const height = LARGE_AIR_OBSTACLE_SIZE.height;
-      const minY = 80;
-      const maxY = Math.max(minY, FLOOR_Y - height - 20);
-      const y = randInt(minY, maxY);
-      const staticSpeed = Math.max(3, speed - 1); // slightly slower for fairness
-      obstacles.push({
-        x: canvas.width + randInt(40, 140),
-        y,
-        width,
-        height,
-        speed: staticSpeed,
-        color: "#535353",
-        type: "air_static_large",
-        shakePhase: Math.random() * Math.PI * 2,
-        shakeSpeed: 1.4 + Math.random() * 0.4,
-        shakeAmplitudeX: randInt(3, 6),
-      });
-    }
+    return;
   }
+
+  if (shouldSpawnPuylo) {
+    // Large static air obstacle using puylo sprite
+    const width = LARGE_AIR_OBSTACLE_SIZE.width;
+    const height = LARGE_AIR_OBSTACLE_SIZE.height;
+    const minY = 80;
+    const maxY = Math.max(minY, FLOOR_Y - height - 20);
+    const y = randInt(minY, maxY);
+    const staticSpeed = Math.max(3, speed - 1); // slightly slower for fairness
+    obstacles.push({
+      x: canvas.width + randInt(40, 140),
+      y,
+      width,
+      height,
+      speed: staticSpeed,
+      color: "#535353",
+      type: "air_static_large",
+      shakePhase: Math.random() * Math.PI * 2,
+      shakeSpeed: 1.4 + Math.random() * 0.4,
+      shakeAmplitudeX: randInt(3, 6),
+    });
+
+    airObstaclesSinceLastPuylo = 0;
+    airObstaclesBeforeNextPuylo = randInt(3, 5);
+    return;
+  }
+
+  // Air obstacle: oscillates up and down while moving horizontally
+  const width = AIR_OBSTACLE_SIZE.width;
+  const height = AIR_OBSTACLE_SIZE.height;
+  const airLaneMaxY = FLOOR_Y - height - 10;
+  const baseY = randInt(120, Math.max(120, airLaneMaxY - 20));
+  const amplitude = randInt(12, 24);
+  const phase = Math.random() * Math.PI * 2;
+  const phaseSpeed = 0.05 + Math.random() * 0.06; // radians per frame
+  obstacles.push({
+    x: canvas.width + randInt(0, 80),
+    y: baseY,
+    baseY,
+    width,
+    height,
+    speed,
+    amplitude,
+    phase,
+    phaseSpeed,
+    color: "#535353",
+    type: "air_oscillating",
+  });
+
+  airObstaclesSinceLastPuylo++;
 }
 
 function isColliding(a, b) {
