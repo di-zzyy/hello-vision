@@ -147,6 +147,7 @@ function restartGame() {
 }
 
 function resetGameState() {
+  gameOver = false;
   player.x = 50;
   player.y = PLAYER_GROUND_Y;
   player.dy = 0;
@@ -273,11 +274,6 @@ function update() {
       // ignore storage errors
     }
     updateScoreUI();
-    // Show Restart button on game over
-    if (startBtn) {
-      startBtn.textContent = "Restart";
-      startBtn.classList.remove("hidden");
-    }
     drawGameOver();
     return;
   }
@@ -404,12 +400,17 @@ function update() {
     // Bullet collision
     for (let j = bullets.length - 1; j >= 0; j--) {
       const b = bullets[j];
-      if (isColliding(b, o)) {
+      if (!isColliding(b, o)) continue;
+
+      if (o.type.startsWith("air")) {
         obstacles.splice(i, 1);
         bullets.splice(j, 1);
         score += 5;
         break;
       }
+
+      // Bullets dissipate against ground obstacles without removing them
+      bullets.splice(j, 1);
     }
 
     // Off-screen
@@ -433,6 +434,7 @@ function drawGameOver() {
   ctx.fillText("Game Over!", canvas.width / 2 - 100, canvas.height / 2 - 10);
   ctx.font = "20px Arial";
   ctx.fillText(`Final Score: ${score}`, canvas.width / 2 - 70, canvas.height / 2 + 20);
+  ctx.fillText("Press Space or R to try again", canvas.width / 2 - 120, canvas.height / 2 + 50);
 }
 
 // Difficulty helpers: ramp up spawn rate and speed over time
