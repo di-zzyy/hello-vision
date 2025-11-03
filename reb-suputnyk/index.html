@@ -8,18 +8,18 @@
 </head>
 <body>
   <canvas id="game" width="800" height="300"></canvas>
-  <div id="ui">
-    <div class="left">
-      <button id="startBtn">Start</button>
+    <div id="ui">
+      <div class="left">
+        <button id="startBtn">Start</button>
+      </div>
+      <div class="right">
+        <span id="score">Score: 0</span>
+        <span id="hiScore">Best: 0</span>
+      </div>
     </div>
-    <div class="right">
-      <span id="score">Score: 0</span>
-      <span id="hiScore">Best: 0</span>
+    <div id="help">
+      Space: Start run / Shoot • Arrow Up: Jump (double jump ready) • Click or Tap: Shoot air obstacles • R: Restart run
     </div>
-  </div>
-  <div id="help">
-    Space: Start/Jump/Restart • Click/Enter: Shoot air obstacles • R: Restart • Jump over ground obstacles
-  </div>
   <script src="game.js"></script>
 </body>
 </html>

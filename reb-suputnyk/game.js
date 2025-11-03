@@ -536,7 +536,9 @@ function drawStartPrompt() {
   drawPlayer();
   ctx.fillStyle = "#535353";
   ctx.font = "20px Arial";
-  ctx.fillText("Press Space or click Start", canvas.width / 2 - 150, 60);
+  ctx.textAlign = "center";
+  ctx.fillText("Press Space or click Start", canvas.width / 2, 60);
+  ctx.textAlign = "left";
   updateStartButtonVisibility();
 }
 
@@ -725,11 +727,15 @@ function drawGameOver() {
   ctx.fillStyle = "rgba(0,0,0,0.5)";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "#fff";
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+  ctx.textAlign = "center";
   ctx.font = "36px Arial";
-  ctx.fillText("Game Over!", canvas.width / 2 - 100, canvas.height / 2 - 10);
+  ctx.fillText("Game Over!", centerX, centerY - 20);
   ctx.font = "20px Arial";
-  ctx.fillText(`Final Score: ${score}`, canvas.width / 2 - 70, canvas.height / 2 + 20);
-  ctx.fillText("Press R to try again", canvas.width / 2 - 120, canvas.height / 2 + 50);
+  ctx.fillText(`Final Score: ${score}`, centerX, centerY + 12);
+  ctx.fillText("Press R to try again", centerX, centerY + 42);
+  ctx.textAlign = "left";
   updateStartButtonVisibility();
 }
 
