@@ -89,7 +89,7 @@ let player = {
 let bullets = [];
 let obstacles = [];
 let airObstaclesSinceLastPuylo = 0;
-let airObstaclesBeforeNextPuylo = randInt(3, 5);
+let airObstaclesBeforeNextPuylo = randInt(8, 10);
 
 // Input forgiveness state
 let jumpBufferFrames = 0; // counts down when jump was requested recently
@@ -240,7 +240,7 @@ function resetGameState() {
   bullets = [];
   obstacles = [];
   airObstaclesSinceLastPuylo = 0;
-  airObstaclesBeforeNextPuylo = randInt(3, 5);
+  airObstaclesBeforeNextPuylo = randInt(8, 10);
   frame = 0;
   score = 0;
   spawnCountdown = nextSpawnCountdown();
@@ -338,7 +338,7 @@ function createObstacle() {
     });
 
     airObstaclesSinceLastPuylo = 0;
-    airObstaclesBeforeNextPuylo = randInt(3, 5);
+    airObstaclesBeforeNextPuylo = randInt(8, 10);
     return;
   }
 
