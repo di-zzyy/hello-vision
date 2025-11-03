@@ -255,7 +255,6 @@ function createObstacle() {
         shakePhase: Math.random() * Math.PI * 2,
         shakeSpeed: 1.4 + Math.random() * 0.4,
         shakeAmplitudeX: randInt(3, 6),
-        shakeAmplitudeY: randInt(2, 4),
       });
     }
   }
@@ -412,9 +411,7 @@ function update() {
     if (o.type === "air_static_large") {
       o.shakePhase += o.shakeSpeed;
       const shakeX = Math.sin(o.shakePhase) * o.shakeAmplitudeX;
-      const shakeY = Math.sin(o.shakePhase * 1.7) * o.shakeAmplitudeY;
       renderX += shakeX;
-      renderY += shakeY;
     }
 
     if (
