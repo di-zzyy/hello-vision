@@ -246,24 +246,22 @@ function playShootSound() {
 startBtn?.addEventListener("click", () => startGame());
 
 document.addEventListener("keydown", (e) => {
-  if (e.code === "PageUp") {
+  if (e.code === "ArrowUp") {
     e.preventDefault();
-    if (gameOver) {
-      restartGame();
-    } else if (!isRunning) {
-      startGame();
-    } else {
-      // buffer the jump input; will be consumed in the update loop
-      jumpBufferFrames = JUMP_BUFFER_FRAMES;
-    }
+    if (!isRunning || gameOver) return;
+    // buffer the jump input; will be consumed in the update loop
+    jumpBufferFrames = JUMP_BUFFER_FRAMES;
   }
   if (e.code === "Space") {
     e.preventDefault();
-    if (isRunning) {
+    if (!isRunning && !gameOver) {
+      startGame();
+    } else if (isRunning && !gameOver) {
       shoot();
     }
   }
   if (e.code === "KeyR") {
+    e.preventDefault();
     restartGame();
   }
 });
@@ -532,7 +530,7 @@ function drawStartPrompt() {
   drawPlayer();
   ctx.fillStyle = "#535353";
   ctx.font = "20px Arial";
-  ctx.fillText("Press PgUp or click Start", canvas.width / 2 - 150, 60);
+  ctx.fillText("Press Space or click Start", canvas.width / 2 - 150, 60);
   updateStartButtonVisibility();
 }
 
@@ -725,7 +723,7 @@ function drawGameOver() {
   ctx.fillText("Game Over!", canvas.width / 2 - 100, canvas.height / 2 - 10);
   ctx.font = "20px Arial";
   ctx.fillText(`Final Score: ${score}`, canvas.width / 2 - 70, canvas.height / 2 + 20);
-  ctx.fillText("Press PgUp or R to try again", canvas.width / 2 - 120, canvas.height / 2 + 50);
+  ctx.fillText("Press R to try again", canvas.width / 2 - 120, canvas.height / 2 + 50);
   updateStartButtonVisibility();
 }
 
