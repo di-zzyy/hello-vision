@@ -13,7 +13,7 @@ groundObstacleImg.src = "./reb.png";
 const airObstacleImg = new Image();
 airObstacleImg.src = "./air-1.png";
 const largeAirObstacleImg = new Image();
-largeAirObstacleImg.src = "./puylo.PNG";
+largeAirObstacleImg.src = "./puylo.png";
 
 const backgroundMusic = new Audio("./futuristic.mp3");
 backgroundMusic.loop = true;
