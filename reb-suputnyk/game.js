@@ -71,6 +71,8 @@ let player = {
   grounded: true,
   forwardSpeed: 2.0,
   flightPhase: 0,
+  maxJumps: 2,
+  jumpCount: 0,
 };
 
 let bullets = [];
@@ -202,6 +204,7 @@ function resetGameState() {
   player.dy = 0;
   player.grounded = true;
   player.flightPhase = 0;
+  player.jumpCount = 0;
 
   bullets = [];
   obstacles = [];
@@ -214,6 +217,27 @@ function resetGameState() {
 function jump() {
   player.dy = player.jumpPower;
   player.grounded = false;
+  player.jumpCount = Math.min(player.jumpCount + 1, player.maxJumps);
+}
+
+function canPerformJump() {
+  if (player.jumpCount >= player.maxJumps) return false;
+  if (player.jumpCount === 0) {
+    return player.grounded || coyoteFrames > 0;
+  }
+  return true;
+}
+
+function tryConsumeJumpBuffer() {
+  if (jumpBufferFrames <= 0) return;
+  if (!canPerformJump()) return;
+
+  const isFirstJump = player.jumpCount === 0;
+  jump();
+  jumpBufferFrames = 0;
+  if (isFirstJump) {
+    coyoteFrames = 0;
+  }
 }
 
 function shoot() {
@@ -398,14 +422,8 @@ function update() {
   } else if (coyoteFrames > 0) {
     coyoteFrames--;
   }
+  tryConsumeJumpBuffer();
   if (jumpBufferFrames > 0) jumpBufferFrames--;
-
-  // Consume buffered jump using coyote time (before physics step)
-  if (jumpBufferFrames > 0 && (player.grounded || coyoteFrames > 0)) {
-    jump();
-    jumpBufferFrames = 0;
-    coyoteFrames = 0;
-  }
 
   // Gravity
   player.dy += player.gravity;
@@ -416,13 +434,12 @@ function update() {
     player.y = PLAYER_GROUND_Y;
     player.dy = 0;
     player.grounded = true;
+    player.jumpCount = 0;
   }
 
   // If we buffered a jump right before landing, trigger it now
-  if (player.grounded && jumpBufferFrames > 0) {
-    jump();
-    jumpBufferFrames = 0;
-    coyoteFrames = 0;
+  if (player.grounded) {
+    tryConsumeJumpBuffer();
   }
 
   // Forward movement: ease to target X
