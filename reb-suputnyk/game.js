@@ -38,6 +38,9 @@ const PLAYER_HEIGHT = 60;
 // 10% larger than previous size: height 66px, width ~52.8px
 const GROUND_OBSTACLE_HEIGHT = 66; // 66px tall (10% bigger)
 const GROUND_OBSTACLE_WIDTH = 53; // ≈52.8px wide (5:4 ratio with height)
+const MIN_GROUND_OBSTACLE_GAP = 88;
+const MIN_GROUND_OBSTACLE_SPAWN_OFFSET = 48;
+const MAX_GROUND_OBSTACLE_SPAWN_OFFSET = 132;
 const PLAYER_GROUND_Y = 220; // player's top-left Y when standing on ground
 const FLOOR_Y = PLAYER_GROUND_Y + PLAYER_HEIGHT; // absolute ground line in canvas coords
 // Shooting rate limit
@@ -91,8 +94,8 @@ let player = {
   width: PLAYER_WIDTH,
   height: PLAYER_HEIGHT,
   dy: 0,
-  gravity: 0.72, // slightly lower gravity: longer airtime
-  jumpPower: -14.5, // stronger jump: higher peak
+  gravity: 0.68, // slightly lower gravity: longer airtime
+  jumpPower: -15.2, // stronger jump: higher peak
   grounded: true,
   forwardSpeed: 3.0,
   flightPhase: 0,
@@ -428,8 +431,28 @@ function createObstacle() {
     const width = GROUND_OBSTACLE_WIDTH;
     const height = GROUND_OBSTACLE_HEIGHT;
     const y = FLOOR_Y - height;
+    let lastGroundObstacle = null;
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+      if (obstacles[i].type === "ground") {
+        lastGroundObstacle = obstacles[i];
+        break;
+      }
+    }
+    const minSpawnX = canvas.width + MIN_GROUND_OBSTACLE_SPAWN_OFFSET;
+    let spawnX = canvas.width + randInt(MIN_GROUND_OBSTACLE_SPAWN_OFFSET, MAX_GROUND_OBSTACLE_SPAWN_OFFSET);
+
+    if (lastGroundObstacle) {
+      const requiredGap = lastGroundObstacle.width + MIN_GROUND_OBSTACLE_GAP;
+      const requiredX = lastGroundObstacle.x + requiredGap;
+      const enforcedX = Math.max(requiredX, minSpawnX);
+      if (spawnX < enforcedX) {
+        const wiggle = randInt(0, 16);
+        spawnX = enforcedX + wiggle;
+      }
+    }
+
     obstacles.push({
-      x: canvas.width + randInt(0, 80),
+      x: spawnX,
       y,
       width,
       height,
