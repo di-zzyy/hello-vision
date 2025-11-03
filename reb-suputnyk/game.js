@@ -48,11 +48,13 @@ const MIN_SHOT_INTERVAL_MS = Math.floor(1000 / MAX_SHOTS_PER_SECOND);
 const AIR_OBSTACLE_SIZE = { width: 60, height: 54 };
 const LARGE_AIR_OBSTACLE_SIZE = { width: 92, height: 92 };
 
-const BASE_OBSTACLE_SPEED = 4;
-const SPEED_INCREASE_PER_LEVEL = 0.6;
-const SCORE_PER_SPEED_LEVEL = 20;
+const BASE_OBSTACLE_SPEED = 5;
+const SPEED_INCREASE_PER_LEVEL = 0.8;
+const SCORE_PER_SPEED_LEVEL = 40;
 const MAX_SPEED_LEVEL = 10;
 const SCORE_FOR_MAX_DIFFICULTY = SCORE_PER_SPEED_LEVEL * MAX_SPEED_LEVEL;
+const MAX_SAME_OBSTACLE_FAMILY_STREAK = 2;
+const OBSTACLE_BALANCE_WINDOW = 6;
 
 // Jump forgiveness and hitbox tuning
 const JUMP_BUFFER_FRAMES = 10; // allow jump input buffered for ~160ms
@@ -86,7 +88,7 @@ let player = {
   gravity: 0.72, // slightly lower gravity: longer airtime
   jumpPower: -14.5, // stronger jump: higher peak
   grounded: true,
-  forwardSpeed: 2.0,
+  forwardSpeed: 3.0,
   flightPhase: 0,
   maxJumps: 2,
   jumpCount: 0,
@@ -97,6 +99,9 @@ let obstacles = [];
 let airObstaclesSinceLarge = 0;
 let airObstaclesUntilLarge = 0;
 let forceLargeAirSpawn = false;
+let lastSpawnedObstacleFamily = null;
+let sameObstacleFamilyStreak = 0;
+const recentObstacleFamilies = [];
 
 // Input forgiveness state
 let jumpBufferFrames = 0; // counts down when jump was requested recently
@@ -105,6 +110,10 @@ let coyoteFrames = 0; // counts down after leaving ground
 // Helpers
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }
 
 function getSpeedLevel() {
@@ -126,6 +135,40 @@ function registerStandardAirObstacle() {
   if (airObstaclesSinceLarge >= airObstaclesUntilLarge) {
     forceLargeAirSpawn = true;
   }
+}
+
+function recordObstacleFamily(family) {
+  if (lastSpawnedObstacleFamily === family) {
+    sameObstacleFamilyStreak++;
+  } else {
+    lastSpawnedObstacleFamily = family;
+    sameObstacleFamilyStreak = 1;
+  }
+
+  recentObstacleFamilies.push(family);
+  if (recentObstacleFamilies.length > OBSTACLE_BALANCE_WINDOW) {
+    recentObstacleFamilies.shift();
+  }
+}
+
+function getBalancedAirChance() {
+  const baseChance = clamp(0.5 - getDifficulty() * 0.08, 0.4, 0.6);
+  if (recentObstacleFamilies.length === 0) return baseChance;
+
+  const airCount = recentObstacleFamilies.reduce(
+    (count, family) => (family === "air" ? count + 1 : count),
+    0
+  );
+  const ratio = airCount / recentObstacleFamilies.length;
+  let adjusted = baseChance;
+
+  if (ratio > 0.6) {
+    adjusted -= 0.18;
+  } else if (ratio < 0.4) {
+    adjusted += 0.18;
+  }
+
+  return clamp(adjusted, 0.35, 0.65);
 }
 
 function updateScoreUI() {
@@ -272,6 +315,9 @@ function resetGameState() {
   resetAirObstacleCycle();
   spawnCountdown = nextSpawnCountdown();
   updateScoreUI();
+  lastSpawnedObstacleFamily = null;
+  sameObstacleFamilyStreak = 0;
+  recentObstacleFamilies.length = 0;
 }
 
 function jump() {
@@ -310,7 +356,7 @@ function shoot() {
     y: player.y + player.height / 2 - 3,
     width: 16,
     height: 6,
-    speed: 8,
+    speed: 10,
   });
 
   playShootSound();
@@ -325,7 +371,7 @@ function createObstacle() {
     const minY = 80;
     const maxY = Math.max(minY, FLOOR_Y - height - 20);
     const y = randInt(minY, maxY);
-    const staticSpeed = Math.max(3, baseSpeed - 0.8);
+    const staticSpeed = Math.max(3.5, baseSpeed - 0.6);
     obstacles.push({
       x: canvas.width + randInt(40, 140),
       y,
@@ -338,13 +384,24 @@ function createObstacle() {
       shakeSpeed: 1.4 + Math.random() * 0.4,
       shakeAmplitudeX: randInt(3, 6),
     });
+    recordObstacleFamily("air");
     resetAirObstacleCycle();
     return;
   }
 
-  const isAir = Math.random() < 0.5;
+  let spawnAir = Math.random() < getBalancedAirChance();
+  const candidateFamily = spawnAir ? "air" : "ground";
 
-  if (!isAir) {
+  if (
+    lastSpawnedObstacleFamily === candidateFamily &&
+    sameObstacleFamilyStreak >= MAX_SAME_OBSTACLE_FAMILY_STREAK
+  ) {
+    spawnAir = !spawnAir;
+  }
+
+  const family = spawnAir ? "air" : "ground";
+
+  if (family === "ground") {
     const width = GROUND_OBSTACLE_WIDTH;
     const height = GROUND_OBSTACLE_HEIGHT;
     const y = FLOOR_Y - height;
@@ -353,10 +410,11 @@ function createObstacle() {
       y,
       width,
       height,
-      speed: baseSpeed,
+      speed: baseSpeed * 1.05,
       color: "#535353",
       type: "ground",
     });
+    recordObstacleFamily("ground");
     return;
   }
 
@@ -381,6 +439,7 @@ function createObstacle() {
     color: "#535353",
     type: "air_oscillating",
   });
+  recordObstacleFamily("air");
   registerStandardAirObstacle();
 }
 
@@ -626,7 +685,7 @@ function update() {
     // Off-screen
     if (o.x + o.width < 0) {
       obstacles.splice(i, 1);
-      score++;
+      score += 2;
     }
   }
 
@@ -656,10 +715,10 @@ function getDifficulty() {
 }
 
 function nextSpawnCountdown() {
-  const baseMin = 60;
-  const baseMax = 110;
-  const reduction = Math.floor(getDifficulty() * 40); // up to ~40 frames reduction
-  const min = Math.max(30, baseMin - reduction);
+  const baseMin = 48;
+  const baseMax = 92;
+  const reduction = Math.floor(getDifficulty() * 52); // up to ~52 frames reduction
+  const min = Math.max(24, baseMin - reduction);
   const max = Math.max(min + 5, baseMax - reduction);
   return randInt(min, max);
 }
