@@ -252,6 +252,10 @@ function createObstacle() {
         speed: staticSpeed,
         color: "#535353",
         type: "air_static_large",
+        shakePhase: Math.random() * Math.PI * 2,
+        shakeSpeed: 1.4 + Math.random() * 0.4,
+        shakeAmplitudeX: randInt(3, 6),
+        shakeAmplitudeY: randInt(2, 4),
       });
     }
   }
@@ -402,34 +406,50 @@ function update() {
       const targetY = o.baseY + Math.sin(o.phase) * o.amplitude;
       o.y = Math.max(minY, Math.min(maxY, targetY));
     }
+    let renderX = o.x;
+    let renderY = o.y;
+
+    if (o.type === "air_static_large") {
+      o.shakePhase += o.shakeSpeed;
+      const shakeX = Math.sin(o.shakePhase) * o.shakeAmplitudeX;
+      const shakeY = Math.sin(o.shakePhase * 1.7) * o.shakeAmplitudeY;
+      renderX += shakeX;
+      renderY += shakeY;
+    }
+
     if (
       o.type === "ground" &&
       groundObstacleImg.complete &&
       groundObstacleImg.naturalWidth > 0
     ) {
-      ctx.drawImage(groundObstacleImg, o.x, o.y, o.width, o.height);
+      ctx.drawImage(groundObstacleImg, renderX, renderY, o.width, o.height);
     } else if (
       o.type === "air_static_large" &&
       largeAirObstacleImg.complete &&
       largeAirObstacleImg.naturalWidth > 0
     ) {
-      ctx.drawImage(largeAirObstacleImg, o.x, o.y, o.width, o.height);
+      ctx.drawImage(largeAirObstacleImg, renderX, renderY, o.width, o.height);
     } else if (
       o.type.startsWith("air") &&
       airObstacleImg.complete &&
       airObstacleImg.naturalWidth > 0
     ) {
-      ctx.drawImage(airObstacleImg, o.x, o.y, o.width, o.height);
+      ctx.drawImage(airObstacleImg, renderX, renderY, o.width, o.height);
     } else {
       ctx.fillStyle = o.color;
-      ctx.fillRect(o.x, o.y, o.width, o.height);
+      ctx.fillRect(renderX, renderY, o.width, o.height);
     }
 
     // Player collision with forgiving hitbox and top-overlap grace
     const ph = getPlayerHitbox();
-    if (isColliding(ph, o)) {
+    const obstacleBounds =
+      o.type === "air_static_large"
+        ? { x: renderX, y: renderY, width: o.width, height: o.height }
+        : o;
+
+    if (isColliding(ph, obstacleBounds)) {
       const playerBottom = ph.y + ph.height;
-      const obstacleTop = o.y;
+      const obstacleTop = obstacleBounds.y;
       const verticalOverlap = playerBottom - obstacleTop; // > 0 means overlapping from top
       if (!(verticalOverlap > 0 && verticalOverlap <= VERTICAL_GRACE_PX)) {
         gameOver = true;
@@ -439,7 +459,7 @@ function update() {
     // Bullet collision
     for (let j = bullets.length - 1; j >= 0; j--) {
       const b = bullets[j];
-      if (!isColliding(b, o)) continue;
+      if (!isColliding(b, obstacleBounds)) continue;
 
       if (o.type.startsWith("air")) {
         obstacles.splice(i, 1);
