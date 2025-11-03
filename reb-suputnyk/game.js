@@ -88,7 +88,6 @@ let player = {
 
 let bullets = [];
 let obstacles = [];
-let airObstaclesUntilLarge = randInt(8, 10);
 
 // Input forgiveness state
 let jumpBufferFrames = 0; // counts down when jump was requested recently
@@ -238,7 +237,6 @@ function resetGameState() {
 
   bullets = [];
   obstacles = [];
-  airObstaclesUntilLarge = randInt(8, 10);
   frame = 0;
   score = 0;
   spawnCountdown = nextSpawnCountdown();
@@ -307,8 +305,8 @@ function createObstacle() {
       type: "ground",
     });
   } else {
-    const shouldSpawnLarge = airObstaclesUntilLarge <= 0;
-    if (!shouldSpawnLarge) {
+    const airVariantRoll = Math.random();
+    if (airVariantRoll < 0.65) {
       // Air obstacle: oscillates up and down while moving horizontally
       const width = AIR_OBSTACLE_SIZE.width;
       const height = AIR_OBSTACLE_SIZE.height;
@@ -331,7 +329,6 @@ function createObstacle() {
         color: "#535353",
         type: "air_oscillating",
       });
-      airObstaclesUntilLarge--;
     } else {
       // Large static air obstacle using puylo sprite
       const width = LARGE_AIR_OBSTACLE_SIZE.width;
@@ -352,7 +349,6 @@ function createObstacle() {
         shakeSpeed: 1.4 + Math.random() * 0.4,
         shakeAmplitudeX: randInt(3, 6),
       });
-      airObstaclesUntilLarge = randInt(8, 10);
     }
   }
 }
