@@ -15,6 +15,11 @@ airObstacleImg.src = "./air-1.png";
 const largeAirObstacleImg = new Image();
 largeAirObstacleImg.src = "./puylo.png";
 
+const backgroundMusic = new Audio("./When the Sun Goes Down.mp3");
+backgroundMusic.loop = true;
+backgroundMusic.volume = 0.5;
+backgroundMusic.preload = "auto";
+
 // Game constants
 const PLAYER_WIDTH = 60;
 const PLAYER_HEIGHT = 60;
@@ -94,6 +99,30 @@ function updateStartButtonVisibility() {
   }
 }
 
+function playBackgroundMusic() {
+  try {
+    backgroundMusic.currentTime = 0;
+  } catch (_) {
+    // Ignore seek errors (e.g., if metadata not loaded yet)
+  }
+
+  const playPromise = backgroundMusic.play();
+  if (playPromise && typeof playPromise.then === "function") {
+    playPromise.catch(() => {
+      // Autoplay restrictions may block playback until a user gesture
+    });
+  }
+}
+
+function stopBackgroundMusic() {
+  backgroundMusic.pause();
+  try {
+    backgroundMusic.currentTime = 0;
+  } catch (_) {
+    // Ignore seek errors
+  }
+}
+
 // Input
 startBtn?.addEventListener("click", () => startGame());
 
@@ -154,6 +183,7 @@ function startGame() {
   isRunning = true;
   // Hide Start/Restart button during gameplay
   updateStartButtonVisibility();
+  playBackgroundMusic();
   animationId = requestAnimationFrame(update);
 }
 
@@ -161,6 +191,7 @@ function restartGame() {
   isRunning = false;
   gameOver = false;
   cancelAnimationFrame(animationId);
+  stopBackgroundMusic();
   startGame();
 }
 
@@ -346,6 +377,7 @@ function update() {
   if (!isRunning) return; // guard if stopped
   if (gameOver) {
     isRunning = false;
+    stopBackgroundMusic();
     hiScore = Math.max(hiScore, score);
     try {
       localStorage.setItem("hiScore", String(hiScore));
