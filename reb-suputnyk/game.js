@@ -48,6 +48,12 @@ const MIN_SHOT_INTERVAL_MS = Math.floor(1000 / MAX_SHOTS_PER_SECOND);
 const AIR_OBSTACLE_SIZE = { width: 60, height: 54 };
 const LARGE_AIR_OBSTACLE_SIZE = { width: 92, height: 92 };
 
+const BASE_OBSTACLE_SPEED = 4;
+const SPEED_INCREASE_PER_LEVEL = 0.6;
+const SCORE_PER_SPEED_LEVEL = 20;
+const MAX_SPEED_LEVEL = 10;
+const SCORE_FOR_MAX_DIFFICULTY = SCORE_PER_SPEED_LEVEL * MAX_SPEED_LEVEL;
+
 // Jump forgiveness and hitbox tuning
 const JUMP_BUFFER_FRAMES = 10; // allow jump input buffered for ~160ms
 const COYOTE_FRAMES = 9; // allow jump shortly after leaving ground (~150ms)
@@ -88,6 +94,9 @@ let player = {
 
 let bullets = [];
 let obstacles = [];
+let airObstaclesSinceLarge = 0;
+let airObstaclesUntilLarge = 0;
+let forceLargeAirSpawn = false;
 
 // Input forgiveness state
 let jumpBufferFrames = 0; // counts down when jump was requested recently
@@ -96,6 +105,27 @@ let coyoteFrames = 0; // counts down after leaving ground
 // Helpers
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getSpeedLevel() {
+  return Math.min(MAX_SPEED_LEVEL, Math.floor(score / SCORE_PER_SPEED_LEVEL));
+}
+
+function getObstacleSpeed() {
+  return BASE_OBSTACLE_SPEED + getSpeedLevel() * SPEED_INCREASE_PER_LEVEL;
+}
+
+function resetAirObstacleCycle() {
+  airObstaclesSinceLarge = 0;
+  airObstaclesUntilLarge = randInt(8, 10);
+  forceLargeAirSpawn = false;
+}
+
+function registerStandardAirObstacle() {
+  airObstaclesSinceLarge++;
+  if (airObstaclesSinceLarge >= airObstaclesUntilLarge) {
+    forceLargeAirSpawn = true;
+  }
 }
 
 function updateScoreUI() {
@@ -239,6 +269,7 @@ function resetGameState() {
   obstacles = [];
   frame = 0;
   score = 0;
+  resetAirObstacleCycle();
   spawnCountdown = nextSpawnCountdown();
   updateScoreUI();
 }
@@ -286,12 +317,34 @@ function shoot() {
 }
 
 function createObstacle() {
-  // Decide category: ground vs air
+  const baseSpeed = getObstacleSpeed();
+
+  if (forceLargeAirSpawn) {
+    const width = LARGE_AIR_OBSTACLE_SIZE.width;
+    const height = LARGE_AIR_OBSTACLE_SIZE.height;
+    const minY = 80;
+    const maxY = Math.max(minY, FLOOR_Y - height - 20);
+    const y = randInt(minY, maxY);
+    const staticSpeed = Math.max(3, baseSpeed - 0.8);
+    obstacles.push({
+      x: canvas.width + randInt(40, 140),
+      y,
+      width,
+      height,
+      speed: staticSpeed,
+      color: "#535353",
+      type: "air_static_large",
+      shakePhase: Math.random() * Math.PI * 2,
+      shakeSpeed: 1.4 + Math.random() * 0.4,
+      shakeAmplitudeX: randInt(3, 6),
+    });
+    resetAirObstacleCycle();
+    return;
+  }
+
   const isAir = Math.random() < 0.5;
-  const speed = 5 + Math.floor(getDifficulty() * 4); // slowly increases over time
 
   if (!isAir) {
-    // Ground obstacle: use uniform dimensions with 5:4 height:width ratio
     const width = GROUND_OBSTACLE_WIDTH;
     const height = GROUND_OBSTACLE_HEIGHT;
     const y = FLOOR_Y - height;
@@ -300,57 +353,35 @@ function createObstacle() {
       y,
       width,
       height,
-      speed,
+      speed: baseSpeed,
       color: "#535353",
       type: "ground",
     });
-  } else {
-    const airVariantRoll = Math.random();
-    if (airVariantRoll < 0.65) {
-      // Air obstacle: oscillates up and down while moving horizontally
-      const width = AIR_OBSTACLE_SIZE.width;
-      const height = AIR_OBSTACLE_SIZE.height;
-      const airLaneMinY = 90;
-      const airLaneMaxY = FLOOR_Y - height - 10;
-      const baseY = randInt(120, Math.max(120, airLaneMaxY - 20));
-      const amplitude = randInt(12, 24);
-      const phase = Math.random() * Math.PI * 2;
-      const phaseSpeed = 0.05 + Math.random() * 0.06; // radians per frame
-      obstacles.push({
-        x: canvas.width + randInt(0, 80),
-        y: baseY,
-        baseY,
-        width,
-        height,
-        speed,
-        amplitude,
-        phase,
-        phaseSpeed,
-        color: "#535353",
-        type: "air_oscillating",
-      });
-    } else {
-      // Large static air obstacle using puylo sprite
-      const width = LARGE_AIR_OBSTACLE_SIZE.width;
-      const height = LARGE_AIR_OBSTACLE_SIZE.height;
-      const minY = 80;
-      const maxY = Math.max(minY, FLOOR_Y - height - 20);
-      const y = randInt(minY, maxY);
-      const staticSpeed = Math.max(3, speed - 1); // slightly slower for fairness
-      obstacles.push({
-        x: canvas.width + randInt(40, 140),
-        y,
-        width,
-        height,
-        speed: staticSpeed,
-        color: "#535353",
-        type: "air_static_large",
-        shakePhase: Math.random() * Math.PI * 2,
-        shakeSpeed: 1.4 + Math.random() * 0.4,
-        shakeAmplitudeX: randInt(3, 6),
-      });
-    }
+    return;
   }
+
+  const width = AIR_OBSTACLE_SIZE.width;
+  const height = AIR_OBSTACLE_SIZE.height;
+  const airLaneMinY = 90;
+  const airLaneMaxY = FLOOR_Y - height - 10;
+  const baseY = randInt(120, Math.max(120, airLaneMaxY - 20));
+  const amplitude = randInt(12, 24);
+  const phase = Math.random() * Math.PI * 2;
+  const phaseSpeed = 0.05 + Math.random() * 0.06;
+  obstacles.push({
+    x: canvas.width + randInt(0, 80),
+    y: baseY,
+    baseY,
+    width,
+    height,
+    speed: baseSpeed,
+    amplitude,
+    phase,
+    phaseSpeed,
+    color: "#535353",
+    type: "air_oscillating",
+  });
+  registerStandardAirObstacle();
 }
 
 function isColliding(a, b) {
@@ -617,10 +648,11 @@ function drawGameOver() {
   updateStartButtonVisibility();
 }
 
-// Difficulty helpers: ramp up spawn rate and speed over time
+// Difficulty helpers: ramp up spawn rate and speed as the player scores points
 function getDifficulty() {
-  // 0 at start, 1 at ~100 seconds at 60fps
-  return Math.min(1, frame / 6000);
+  if (SCORE_FOR_MAX_DIFFICULTY <= 0) return 1;
+  const cappedScore = Math.min(score, SCORE_FOR_MAX_DIFFICULTY);
+  return cappedScore / SCORE_FOR_MAX_DIFFICULTY;
 }
 
 function nextSpawnCountdown() {
