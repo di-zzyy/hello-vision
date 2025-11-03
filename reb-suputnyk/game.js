@@ -20,6 +20,17 @@ backgroundMusic.loop = true;
 backgroundMusic.volume = 0.5;
 backgroundMusic.preload = "auto";
 
+const SHOOT_SOUND_PATH = "./whoosh-gaming-blaster.mp3";
+const SHOOT_SOUND_POOL_SIZE = 5;
+const SHOOT_SOUND_VOLUME = 0.65;
+const shootSoundPool = Array.from({ length: SHOOT_SOUND_POOL_SIZE }, () => {
+  const audio = new Audio(SHOOT_SOUND_PATH);
+  audio.volume = SHOOT_SOUND_VOLUME;
+  audio.preload = "auto";
+  return audio;
+});
+let shootSoundIndex = 0;
+
 // Game constants
 const PLAYER_WIDTH = 60;
 const PLAYER_HEIGHT = 60;
@@ -122,6 +133,24 @@ function stopBackgroundMusic() {
     backgroundMusic.currentTime = 0;
   } catch (_) {
     // Ignore seek errors
+  }
+}
+
+function playShootSound() {
+  const audio = shootSoundPool[shootSoundIndex];
+  shootSoundIndex = (shootSoundIndex + 1) % shootSoundPool.length;
+
+  try {
+    audio.currentTime = 0;
+  } catch (_) {
+    // Ignore seek errors if metadata not loaded
+  }
+
+  const playPromise = audio.play();
+  if (playPromise && typeof playPromise.then === "function") {
+    playPromise.catch(() => {
+      // Autoplay restrictions may block playback until a user gesture
+    });
   }
 }
 
@@ -252,6 +281,8 @@ function shoot() {
     height: 6,
     speed: 8,
   });
+
+  playShootSound();
 }
 
 function createObstacle() {
