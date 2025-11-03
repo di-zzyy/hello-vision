@@ -26,9 +26,8 @@ const FLOOR_Y = PLAYER_GROUND_Y + PLAYER_HEIGHT; // absolute ground line in canv
 const MAX_SHOTS_PER_SECOND = 4;
 const MIN_SHOT_INTERVAL_MS = Math.floor(1000 / MAX_SHOTS_PER_SECOND);
 
-// Air obstacle standardized sizes (average and bigger)
-const AIR_OBSTACLE_SIZE_AVG = { width: 48, height: 44 };
-const AIR_OBSTACLE_SIZE_BIG = { width: 60, height: 54 };
+// Air obstacle standardized size (largest previous variant)
+const AIR_OBSTACLE_SIZE = { width: 60, height: 54 };
 
 // Jump forgiveness and hitbox tuning
 const JUMP_BUFFER_FRAMES = 10; // allow jump input buffered for ~160ms
@@ -201,9 +200,8 @@ function createObstacle() {
     });
   } else {
     // Air obstacle: oscillates up and down while moving horizontally
-    const size = Math.random() < 0.6 ? AIR_OBSTACLE_SIZE_AVG : AIR_OBSTACLE_SIZE_BIG;
-    const width = size.width;
-    const height = size.height;
+    const width = AIR_OBSTACLE_SIZE.width;
+    const height = AIR_OBSTACLE_SIZE.height;
     const airLaneMinY = 90;
     const airLaneMaxY = FLOOR_Y - height - 10;
     const baseY = randInt(120, Math.max(120, airLaneMaxY - 20));
