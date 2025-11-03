@@ -39,6 +39,11 @@ const HITBOX_INSET_X = 6; // shrink player hitbox horizontally to reduce grazes
 const HITBOX_INSET_Y = 4; // shrink player hitbox vertically to reduce grazes
 const VERTICAL_GRACE_PX = 6; // ignore tiny vertical overlaps with obstacle tops
 
+const FLIGHT_WOBBLE_AMPLITUDE = 4;
+const FLIGHT_WOBBLE_SPEED = 0.15;
+const FLIGHT_TILT_AMPLITUDE = 0.12;
+const FLIGHT_IDLE_WOBBLE_SCALE = 0.35;
+
 // Game state
 let isRunning = false;
 let gameOver = false;
@@ -60,6 +65,7 @@ let player = {
   jumpPower: -14.5, // stronger jump: higher peak
   grounded: true,
   forwardSpeed: 2.0,
+  flightPhase: 0,
 };
 
 let bullets = [];
@@ -164,6 +170,7 @@ function resetGameState() {
   player.y = PLAYER_GROUND_Y;
   player.dy = 0;
   player.grounded = true;
+  player.flightPhase = 0;
 
   bullets = [];
   obstacles = [];
@@ -288,10 +295,46 @@ function drawGround() {
   ctx.stroke();
 }
 
+function drawPlayer() {
+  const shouldAnimate = isRunning && !gameOver;
+  const airborne = !player.grounded || Math.abs(player.dy) > 0.2;
+  const phaseSpeed = airborne
+    ? FLIGHT_WOBBLE_SPEED
+    : FLIGHT_WOBBLE_SPEED * Math.max(FLIGHT_IDLE_WOBBLE_SCALE, 0.1);
+
+  if (shouldAnimate) {
+    player.flightPhase = (player.flightPhase + phaseSpeed) % (Math.PI * 2);
+  }
+
+  const wobbleAmplitude = airborne
+    ? FLIGHT_WOBBLE_AMPLITUDE
+    : FLIGHT_WOBBLE_AMPLITUDE * FLIGHT_IDLE_WOBBLE_SCALE;
+  const phase = player.flightPhase;
+  const wobble = Math.sin(phase) * wobbleAmplitude;
+  const tiltFromOscillation = Math.sin(phase) * (airborne ? FLIGHT_TILT_AMPLITUDE : FLIGHT_TILT_AMPLITUDE * 0.4);
+  const tiltFromVelocity = airborne ? Math.max(Math.min(-player.dy * 0.035, 0.3), -0.3) : 0;
+
+  const renderX = player.x + player.width / 2;
+  const renderY = player.y + wobble + player.height / 2;
+
+  ctx.save();
+  ctx.translate(renderX, renderY);
+  ctx.rotate(tiltFromOscillation + tiltFromVelocity);
+
+  if (playerImg.complete && playerImg.naturalWidth > 0) {
+    ctx.drawImage(playerImg, -player.width / 2, -player.height / 2, player.width, player.height);
+  } else {
+    ctx.fillStyle = "#ffd166";
+    ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height);
+  }
+
+  ctx.restore();
+}
+
 function drawStartPrompt() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawGround();
-  ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
+  drawPlayer();
   ctx.fillStyle = "#535353";
   ctx.font = "20px Arial";
   ctx.fillText("Press Space or click Start", canvas.width / 2 - 150, 60);
@@ -358,7 +401,7 @@ function update() {
 
   // Draw ground and player
   drawGround();
-  ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
+  drawPlayer();
 
   // Bullets
   for (let i = bullets.length - 1; i >= 0; i--) {
