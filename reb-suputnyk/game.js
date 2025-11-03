@@ -15,7 +15,7 @@ airObstacleImg.src = "./air-1.png";
 const largeAirObstacleImg = new Image();
 largeAirObstacleImg.src = "./puylo.png";
 
-const backgroundMusic = new Audio("./When the Sun Goes Down.mp3");
+const backgroundMusic = new Audio("./futuristic.mp3");
 backgroundMusic.loop = true;
 backgroundMusic.volume = 0.5;
 backgroundMusic.preload = "auto";
