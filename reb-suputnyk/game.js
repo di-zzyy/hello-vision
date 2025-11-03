@@ -126,8 +126,14 @@ function getSpeedLevel() {
   return Math.min(MAX_SPEED_LEVEL, Math.floor(score / SCORE_PER_SPEED_LEVEL));
 }
 
+function getScoreSpeedMultiplier() {
+  const increments = Math.floor(score / 5);
+  return 1 + increments * 0.01;
+}
+
 function getObstacleSpeed() {
-  return BASE_OBSTACLE_SPEED + getSpeedLevel() * SPEED_INCREASE_PER_LEVEL;
+  const baseSpeed = BASE_OBSTACLE_SPEED + getSpeedLevel() * SPEED_INCREASE_PER_LEVEL;
+  return baseSpeed * getScoreSpeedMultiplier();
 }
 
 function resetAirObstacleCycle() {
