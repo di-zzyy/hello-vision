@@ -246,7 +246,7 @@ function playShootSound() {
 startBtn?.addEventListener("click", () => startGame());
 
 document.addEventListener("keydown", (e) => {
-  if (e.code === "Space") {
+  if (e.code === "PageUp") {
     e.preventDefault();
     if (gameOver) {
       restartGame();
@@ -257,8 +257,11 @@ document.addEventListener("keydown", (e) => {
       jumpBufferFrames = JUMP_BUFFER_FRAMES;
     }
   }
-  if (e.code === "Enter") {
-    if (isRunning) shoot();
+  if (e.code === "Space") {
+    e.preventDefault();
+    if (isRunning) {
+      shoot();
+    }
   }
   if (e.code === "KeyR") {
     restartGame();
@@ -529,7 +532,7 @@ function drawStartPrompt() {
   drawPlayer();
   ctx.fillStyle = "#535353";
   ctx.font = "20px Arial";
-  ctx.fillText("Press Space or click Start", canvas.width / 2 - 150, 60);
+  ctx.fillText("Press PgUp or click Start", canvas.width / 2 - 150, 60);
   updateStartButtonVisibility();
 }
 
@@ -722,7 +725,7 @@ function drawGameOver() {
   ctx.fillText("Game Over!", canvas.width / 2 - 100, canvas.height / 2 - 10);
   ctx.font = "20px Arial";
   ctx.fillText(`Final Score: ${score}`, canvas.width / 2 - 70, canvas.height / 2 + 20);
-  ctx.fillText("Press Space or R to try again", canvas.width / 2 - 120, canvas.height / 2 + 50);
+  ctx.fillText("Press PgUp or R to try again", canvas.width / 2 - 120, canvas.height / 2 + 50);
   updateStartButtonVisibility();
 }
 
