@@ -41,25 +41,25 @@ const GROUND_OBSTACLE_WIDTH = 53; // ≈52.8px wide (5:4 ratio with height)
 const PLAYER_GROUND_Y = 220; // player's top-left Y when standing on ground
 const FLOOR_Y = PLAYER_GROUND_Y + PLAYER_HEIGHT; // absolute ground line in canvas coords
 // Shooting rate limit
-const MAX_SHOTS_PER_SECOND = 4;
+const MAX_SHOTS_PER_SECOND = 5; // 20% faster firing cadence
 const MIN_SHOT_INTERVAL_MS = Math.floor(1000 / MAX_SHOTS_PER_SECOND);
 
 // Air obstacle standardized size (largest previous variant)
 const AIR_OBSTACLE_SIZE = { width: 60, height: 54 };
 const LARGE_AIR_OBSTACLE_SIZE = { width: 92, height: 92 };
 
-const BASE_OBSTACLE_SPEED = 4.25; // ~15% slower for easier baseline
-const SPEED_INCREASE_PER_LEVEL = 0.68; // ~15% gentler acceleration curve
-const SCORE_PER_SPEED_LEVEL = 46; // require more progress before speed increases
+const BASE_OBSTACLE_SPEED = 3.4; // 20% slower baseline for longer runs
+const SPEED_INCREASE_PER_LEVEL = 0.54; // 20% gentler acceleration curve
+const SCORE_PER_SPEED_LEVEL = 55; // 20% more progress needed before speed increases
 const MAX_SPEED_LEVEL = 10;
 const SCORE_FOR_MAX_DIFFICULTY = SCORE_PER_SPEED_LEVEL * MAX_SPEED_LEVEL;
 const MAX_SAME_OBSTACLE_FAMILY_STREAK = 2;
 const OBSTACLE_BALANCE_WINDOW = 6;
-const BASE_SPAWN_MIN_FRAMES = 55; // ~15% longer gap baseline between spawns
-const BASE_SPAWN_MAX_FRAMES = 106;
-const MAX_SPAWN_REDUCTION_FRAMES = 44;
+const BASE_SPAWN_MIN_FRAMES = 66; // 20% longer baseline gap between spawns
+const BASE_SPAWN_MAX_FRAMES = 127;
+const MAX_SPAWN_REDUCTION_FRAMES = 35; // 20% softer late-game spawn ramp
 const BASE_DISTANCE_PER_POINT = 520;
-const DISTANCE_PER_POINT = Math.floor(BASE_DISTANCE_PER_POINT / 2); // half the previous distance per request
+const DISTANCE_PER_POINT = Math.floor((BASE_DISTANCE_PER_POINT / 2) * 1.2); // 20% more distance per point slows difficulty ramp
 
 // Jump forgiveness and hitbox tuning
 const JUMP_BUFFER_FRAMES = 10; // allow jump input buffered for ~160ms
